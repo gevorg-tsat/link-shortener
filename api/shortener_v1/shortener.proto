@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package shortener_v1;
+
+option go_package="github.com/gevorg-tsat/link-shortener/internal/shortener_v1;shortener_v1";
+
+service ShortenerV1 {
+  rpc Get(ShortLink) returns (OriginalLink);
+  rpc Post(OriginalLink) returns (ShortLink);
+}
+
+message OriginalLink {
+  string url = 1;
+}
+
+message ShortLink {
+  string url = 1;
+}

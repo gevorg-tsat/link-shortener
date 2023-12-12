@@ -5,6 +5,7 @@ go 1.21.4
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/ilyakaznacheev/cleanenv v1.5.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect

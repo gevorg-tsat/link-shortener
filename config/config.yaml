@@ -1,0 +1,12 @@
+http:
+  host: "0.0.0.0"
+  port: 8080
+grcp:
+  host: "0.0.0.0"
+  port: 8081
+db:
+  host: "host.docker.internal" # to connect to localhost from dockercontainer
+  port: 5432
+  user: "postgres"
+  password: "postgres"
+  dbname: "postgres"

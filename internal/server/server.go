@@ -17,27 +17,29 @@ import (
 type ShortenerServer struct {
 	desc.UnimplementedShortenerV1Server
 	sg  storage.Storage
-	cfg config.Config
+	cfg *config.Config
 }
 
-func New(sg storage.Storage, cfg config.Config) *ShortenerServer {
+func New(sg storage.Storage, cfg *config.Config) *ShortenerServer {
 	return &ShortenerServer{sg: sg, cfg: cfg}
 }
 
 func (s *ShortenerServer) Get(ctx context.Context, link *desc.ShortLink) (*desc.OriginalLink, error) {
 	shortLinkIdentifier := link.Url
-	if slashInd := strings.Index(shortLinkIdentifier, "//"); slashInd != -1 {
-		shortLinkIdentifier = shortLinkIdentifier[slashInd+2:]
+	httpServerURL := fmt.Sprintf("http://%v:%v/", s.cfg.HTTP.Host, s.cfg.HTTP.Port)
+	if !strings.Contains(shortLinkIdentifier, httpServerURL) {
+		return nil, errors.WrongURL
 	}
-	if slashInd := strings.Index(shortLinkIdentifier, "/"); slashInd != -1 {
-		shortLinkIdentifier = shortLinkIdentifier[slashInd+1:]
-	}
+	shortLinkIdentifier = shortLinkIdentifier[len(httpServerURL):]
 	shortLinkIdentifier = strings.TrimRight(shortLinkIdentifier, "/")
 	if len(shortLinkIdentifier) > 10 {
 		return nil, errors.TooLongIdentifier
 	}
 	if len(shortLinkIdentifier) < 10 {
 		return nil, errors.TooShortIdentifier
+	}
+	if len(strings.Trim(shortLinkIdentifier, shorting.CharSet)) != 0 {
+		return nil, errors.InvalidIdentifier
 	}
 	originalURL, err := s.sg.Get(ctx, shortLinkIdentifier)
 	if err != nil {
@@ -55,6 +57,12 @@ func (s *ShortenerServer) Post(ctx context.Context, link *desc.OriginalLink) (*d
 	if err != nil {
 		return nil, errors.BadURL
 	}
+
+	// check cache
+	if oldShortLink, err := s.sg.GetShortLink(ctx, link.Url); err == nil {
+		return s.buildShortLink(oldShortLink), nil
+	}
+
 	identifier := shorting.GenerateIdentifier()
 	_, err = s.sg.Get(ctx, identifier)
 	for !inerrors.Is(err, errors.NotFound) {
@@ -69,10 +77,10 @@ func (s *ShortenerServer) Post(ctx context.Context, link *desc.OriginalLink) (*d
 		log.Println("storage.Set error:", err)
 		return nil, errors.InternalServerError
 	}
-	return s.shortLinkBuilder(identifier), nil
+	return s.buildShortLink(identifier), nil
 }
 
-func (s *ShortenerServer) shortLinkBuilder(identifier string) *desc.ShortLink {
-	originalUrl := fmt.Sprintf("http://%v:%v/%v", s.cfg.Host, s.cfg.Port, identifier)
+func (s *ShortenerServer) buildShortLink(identifier string) *desc.ShortLink {
+	originalUrl := fmt.Sprintf("http://%v:%v/%v", s.cfg.HTTP.Host, s.cfg.HTTP.Port, identifier)
 	return &desc.ShortLink{Url: originalUrl}
 }

@@ -1,12 +1,13 @@
 package errors
 
 import (
-	"errors"
+	"google.golang.org/grpc/status"
 )
 
 var (
-	NotFound           = errors.New("not found")
-	BadURL             = errors.New("doesn't look like url")
-	TooLongIdentifier  = errors.New("too long identifier")
-	TooShortIdentifier = errors.New("too short identifier")
+	NotFound            = status.Error(4, "not found")
+	BadURL              = status.Error(3, "doesn't look like url")
+	TooLongIdentifier   = status.Error(3, "too long identifier")
+	TooShortIdentifier  = status.Error(3, "too short identifier")
+	InternalServerError = status.Error(13, "internal server error")
 )

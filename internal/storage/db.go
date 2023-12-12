@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"github.com/gevorg-tsat/link-shortener/internal/errors"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -16,7 +17,7 @@ type link struct {
 	OriginalURL string `gorm:"unique;not_null"`
 }
 
-func NewDB(host, user, password, dbname string, port int) (*gorm.DB, error) {
+func NewDB(host, user, password, dbname string, port int) (*DB, error) {
 	dsn := fmt.Sprintf("host=%v user=%v password=%v dbname=%v port=%v sslmode=disable",
 		host, user, password, dbname, port)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -28,13 +29,27 @@ func NewDB(host, user, password, dbname string, port int) (*gorm.DB, error) {
 		_ = sqlDB.Close()
 		return nil, err
 	}
-	return db, nil
+	return &DB{db: db}, nil
 }
 
 func (s *DB) Get(ctx context.Context, shortURL string) (originalURL string, err error) {
-	panic("NOT IMPLEMENTED")
+	val := link{ShortURL: shortURL}
+	if res := s.db.WithContext(ctx).First(&val); res.RowsAffected == 0 {
+		return "", errors.NotFound
+	}
+	return val.OriginalURL, nil
 }
 
 func (s *DB) Set(ctx context.Context, shortURL, originalURL string) error {
-	panic("NOT IMPLEMENTED")
+	search := link{OriginalURL: originalURL, ShortURL: shortURL}
+	res := s.db.WithContext(ctx).Create(&search)
+	return res.Error
+}
+
+func (s *DB) GetShortLink(ctx context.Context, originalURL string) (shortURL string, err error) {
+	var val link
+	if res := s.db.WithContext(ctx).First(&val, &link{OriginalURL: originalURL}); res.RowsAffected == 0 {
+		return "", errors.NotFound
+	}
+	return val.ShortURL, nil
 }

@@ -15,8 +15,8 @@ func NewInMemory() *InMemory {
 	return &InMemory{}
 }
 
-func (s *InMemory) Get(_ context.Context, shortURL string) (originalURL string, err error) {
-	value, ok := s.shortToOriginal.Load(shortURL)
+func (s *InMemory) Get(_ context.Context, identifier string) (originalURL string, err error) {
+	value, ok := s.shortToOriginal.Load(identifier)
 	if !ok {
 		return "", errors.NotFound
 	}
@@ -24,13 +24,13 @@ func (s *InMemory) Get(_ context.Context, shortURL string) (originalURL string, 
 	return originalURL, nil
 }
 
-func (s *InMemory) Set(_ context.Context, shortURL, originalURL string) error {
-	value, ok := s.shortToOriginal.Load(shortURL)
+func (s *InMemory) Set(_ context.Context, identifier, originalURL string) error {
+	value, ok := s.shortToOriginal.Load(identifier)
 	if ok && value == originalURL {
 		return nil
 	}
-	s.shortToOriginal.Store(shortURL, originalURL)
-	s.originalToShort.Store(originalURL, shortURL)
+	s.shortToOriginal.Store(identifier, originalURL)
+	s.originalToShort.Store(originalURL, identifier)
 	return nil
 }
 

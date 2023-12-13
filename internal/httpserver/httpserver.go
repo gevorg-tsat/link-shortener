@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/gevorg-tsat/link-shortener/config"
 	"github.com/gevorg-tsat/link-shortener/internal/errors"
-	"github.com/gevorg-tsat/link-shortener/internal/server"
+	"github.com/gevorg-tsat/link-shortener/internal/grcpserver"
 	pb "github.com/gevorg-tsat/link-shortener/internal/shortener_v1"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -16,14 +16,14 @@ type HTTPServer struct {
 	S *http.Server
 }
 
-func New(grpcServer *server.ShortenerServer, cfg *config.Config) *HTTPServer {
+func New(grpcServer *grcpserver.ShortenerServer, cfg *config.Config) *HTTPServer {
 	return &HTTPServer{S: &http.Server{
 		Addr:    fmt.Sprintf("%v:%v", cfg.HTTP.Host, cfg.HTTP.Port),
 		Handler: handlers(grpcServer, cfg),
 	}}
 }
 
-func handlers(shortenerServer *server.ShortenerServer, cfg *config.Config) *mux.Router {
+func handlers(shortenerServer *grcpserver.ShortenerServer, cfg *config.Config) *mux.Router {
 	router := mux.NewRouter()
 	router.HandleFunc("/{identifier}", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {

@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/gevorg-tsat/link-shortener/config"
+	"github.com/gevorg-tsat/link-shortener/internal/grcpserver"
 	"github.com/gevorg-tsat/link-shortener/internal/httpserver"
-	"github.com/gevorg-tsat/link-shortener/internal/server"
 	pb "github.com/gevorg-tsat/link-shortener/internal/shortener_v1"
 	"github.com/gevorg-tsat/link-shortener/internal/storage"
 	"google.golang.org/grpc"
@@ -52,7 +52,7 @@ func main() {
 	}
 	s := grpc.NewServer()
 	reflection.Register(s)
-	shortenerService := server.New(linkStorage, cfg)
+	shortenerService := grcpserver.New(linkStorage, cfg)
 	pb.RegisterShortenerV1Server(s, shortenerService)
 	httpServer := httpserver.New(shortenerService, cfg)
 

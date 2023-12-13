@@ -9,3 +9,12 @@ generate-structs:
 			api/shortener_v1/shortener.proto
 	mv internal/shortener_v1/api/shortener_v1/* internal/shortener_v1/
 	rm -rf internal/shortener_v1/api
+
+build:
+	go build cmd/app/app.go
+
+run-in-memory: build
+	./app --storage=in-memory
+
+run-postgres: build
+	./app --storage=postgres

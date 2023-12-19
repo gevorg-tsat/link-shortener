@@ -11,10 +11,12 @@ type InMemory struct {
 	originalToShort sync.Map
 }
 
+// Create Map storage
 func NewInMemory() *InMemory {
 	return &InMemory{}
 }
 
+// Get original link from map by short link
 func (s *InMemory) Get(_ context.Context, identifier string) (originalURL string, err error) {
 	value, ok := s.shortToOriginal.Load(identifier)
 	if !ok {
@@ -24,6 +26,7 @@ func (s *InMemory) Get(_ context.Context, identifier string) (originalURL string
 	return originalURL, nil
 }
 
+// Set in map short link and original link
 func (s *InMemory) Set(_ context.Context, identifier, originalURL string) error {
 	value, ok := s.shortToOriginal.Load(identifier)
 	if ok && value == originalURL {
@@ -34,6 +37,7 @@ func (s *InMemory) Set(_ context.Context, identifier, originalURL string) error 
 	return nil
 }
 
+// GetShortLink from map by original link
 func (s *InMemory) GetShortLink(_ context.Context, originalURL string) (shortURL string, err error) {
 	value, ok := s.originalToShort.Load(originalURL)
 	if !ok {
@@ -41,4 +45,9 @@ func (s *InMemory) GetShortLink(_ context.Context, originalURL string) (shortURL
 	}
 	shortURL = value.(string)
 	return shortURL, nil
+}
+
+// Mock shutdowning for map
+func (s *InMemory) Shutdown() {
+
 }

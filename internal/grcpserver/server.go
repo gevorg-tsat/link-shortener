@@ -20,10 +20,12 @@ type ShortenerServer struct {
 	cfg *config.Config
 }
 
+// New Shortener Server
 func New(sg storage.Storage, cfg *config.Config) *ShortenerServer {
 	return &ShortenerServer{sg: sg, cfg: cfg}
 }
 
+// Get original link by short link
 func (s *ShortenerServer) Get(ctx context.Context, link *desc.ShortLink) (*desc.OriginalLink, error) {
 	shortLinkIdentifier := link.Url
 	httpServerURL := fmt.Sprintf("http://%v:%v/", s.cfg.HTTP.Host, s.cfg.HTTP.Port)
@@ -52,6 +54,7 @@ func (s *ShortenerServer) Get(ctx context.Context, link *desc.ShortLink) (*desc.
 	return &desc.OriginalLink{Url: originalURL}, nil
 }
 
+// Post original link and return short link to it
 func (s *ShortenerServer) Post(ctx context.Context, link *desc.OriginalLink) (*desc.ShortLink, error) {
 	_, err := url.ParseRequestURI(link.Url)
 	if err != nil {
@@ -80,6 +83,7 @@ func (s *ShortenerServer) Post(ctx context.Context, link *desc.OriginalLink) (*d
 	return s.buildShortLink(identifier), nil
 }
 
+// Build short link with identifier
 func (s *ShortenerServer) buildShortLink(identifier string) *desc.ShortLink {
 	originalUrl := fmt.Sprintf("http://%v:%v/%v", s.cfg.HTTP.Host, s.cfg.HTTP.Port, identifier)
 	return &desc.ShortLink{Url: originalUrl}

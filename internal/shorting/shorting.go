@@ -6,10 +6,14 @@ import (
 )
 
 const (
-	Length  = 10
+	// Length of Identifier
+	Length = 10
+
+	// CharSet used to create identifier
 	CharSet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"
 )
 
+// Generate a random identifier
 func GenerateIdentifier() string {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/gevorg-tsat/link-shortener/config"
@@ -12,14 +14,15 @@ import (
 	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
-	"sync"
+	"net/http"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
-var wg = sync.WaitGroup{}
+const shutdownTimeout = 5 * time.Second
 
 func main() {
-	wg.Add(2)
-
 	storageType := flag.String("storage", "in-memory", "type of storage that will be used. Available: in-memory, postgres")
 	flag.Parse()
 	if *storageType != "postgres" && *storageType != "in-memory" {
@@ -33,13 +36,7 @@ func main() {
 
 	var linkStorage storage.Storage
 	if *storageType == "postgres" {
-		linkStorage, err = storage.NewDB(
-			cfg.DB.Host,
-			cfg.DB.User,
-			cfg.DB.Password,
-			cfg.DB.Name,
-			cfg.DB.Port,
-		)
+		linkStorage, err = storage.NewDB(cfg)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -56,21 +53,32 @@ func main() {
 	pb.RegisterShortenerV1Server(s, shortenerService)
 	httpServer := httpserver.New(shortenerService, cfg)
 
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	go func() {
 		log.Printf("grcp server listening to %v\n", lis.Addr())
 		if err = s.Serve(lis); err != nil {
 			log.Fatalf("failed to start: %v", err)
 		}
-		wg.Done()
 	}()
-
 	go func() {
 		log.Printf("http server listening to %v\n", httpServer.S.Addr)
-		if err = httpServer.S.ListenAndServe(); err != nil {
-			log.Fatal(err)
+		if err = httpServer.S.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("http listen and serve returned err: %v", err)
 		}
-		wg.Done()
 	}()
 
-	wg.Wait()
+	<-ctx.Done()
+	log.Println("got interruption signal")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+	if err := httpServer.S.Shutdown(shutdownCtx); err != nil {
+		log.Printf("http server shutdown returned an err: %v\n", err)
+	}
+	log.Println("http server is stopped gracefully")
+	s.GracefulStop()
+	log.Println("grpc server is stopped gracefully")
+	linkStorage.Shutdown()
+	log.Println("storage connection is stopped")
 }

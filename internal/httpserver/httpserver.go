@@ -1,7 +1,6 @@
 package httpserver
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gevorg-tsat/link-shortener/config"
@@ -16,6 +15,7 @@ type HTTPServer struct {
 	S *http.Server
 }
 
+// Create and configure new server
 func New(grpcServer *grcpserver.ShortenerServer, cfg *config.Config) *HTTPServer {
 	return &HTTPServer{S: &http.Server{
 		Addr:    fmt.Sprintf("%v:%v", cfg.HTTP.Host, cfg.HTTP.Port),
@@ -23,6 +23,7 @@ func New(grpcServer *grcpserver.ShortenerServer, cfg *config.Config) *HTTPServer
 	}}
 }
 
+// Create router with all handlers
 func handlers(shortenerServer *grcpserver.ShortenerServer, cfg *config.Config) *mux.Router {
 	router := mux.NewRouter()
 	router.HandleFunc("/{identifier}", func(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +32,7 @@ func handlers(shortenerServer *grcpserver.ShortenerServer, cfg *config.Config) *
 			params := mux.Vars(r)
 			identifier := params["identifier"]
 			shortUrl := fmt.Sprintf("http://%v:%v/%v", cfg.HTTP.Host, cfg.HTTP.Port, identifier)
-			originalLink, err := shortenerServer.Get(context.Background(), &pb.ShortLink{Url: shortUrl})
+			originalLink, err := shortenerServer.Get(r.Context(), &pb.ShortLink{Url: shortUrl})
 			if err != nil {
 				errors.WriteResponse(w, err)
 				return
@@ -51,7 +52,7 @@ func handlers(shortenerServer *grcpserver.ShortenerServer, cfg *config.Config) *
 				w.Write([]byte("url query required"))
 				return
 			}
-			shortLink, err := shortenerServer.Post(context.Background(), &pb.OriginalLink{Url: query["url"][0]})
+			shortLink, err := shortenerServer.Post(r.Context(), &pb.OriginalLink{Url: query["url"][0]})
 			if err != nil {
 				errors.WriteResponse(w, err)
 				return

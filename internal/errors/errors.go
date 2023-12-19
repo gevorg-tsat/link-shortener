@@ -7,6 +7,7 @@ import (
 	"net/http"
 )
 
+// Error statuses for gRPC with message
 var (
 	NotFound            = status.Error(5, "not found")
 	BadURL              = status.Error(3, "doesn't look like url")
@@ -26,6 +27,7 @@ var (
 	}
 )
 
+// Write error response in body, or log it if error is unknown
 func WriteResponse(w http.ResponseWriter, err error) {
 	statusCode, ok := HTTPCode[err]
 	if !ok {

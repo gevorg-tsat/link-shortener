@@ -4,6 +4,7 @@
 
 - Change config in [config/config.yaml](config/config.yaml), if necessary
 
+
 ### With golang
 ```bash
 go build cmd/app/app.go
